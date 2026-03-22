@@ -163,7 +163,6 @@ See [screenshots/README.md](screenshots/README.md)
 ---
 
 ## Repo Structure
- 
 ```
 Cloud-SOC-Lab/
 ├── README.md
@@ -175,8 +174,9 @@ Cloud-SOC-Lab/
 ├── detection/
 │   └── cloudtrail-analysis.md
 └── screenshots/
+    └── README.md
 ```
- 
+
 ---
 
 ## Related
