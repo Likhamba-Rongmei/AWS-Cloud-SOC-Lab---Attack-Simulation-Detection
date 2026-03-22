@@ -1,131 +1,180 @@
-# Attack 1 — IAM Privilege Escalation
+# Attack 3 — EC2 Persistence
 
-**MITRE ATT&CK:** T1098 — Account Manipulation  
-**Service:** IAM  
-**Executed by:** attacker-user (compromised low-privilege account)  
-**Detected via:** CloudTrail — `AttachUserPolicy`, `CreateAccessKey`
+**MITRE ATT&CK:** T1078 — Valid Accounts  
+**Service:** EC2, IAM  
+**Executed by:** Root (simulating stolen admin/root credentials)  
+**Detected via:** CloudTrail — `RunInstances`, SSH recon logs
 
 ---
 
 ## Scenario
 
-A low-privilege IAM user (attacker-user) with no permissions attempts to grant themselves administrator access, then creates new access keys to establish persistent CLI access even if the original session is terminated.
+An attacker who has obtained root credentials through a leaked `.env` file, a GitHub commit containing access keys, or a compromised developer machine, launches an EC2 instance inside the victim's account to establish a persistent foothold.
 
-This simulates the most common post-compromise action in cloud breaches: an attacker who has stolen a developer's credentials trying to escalate before they are detected.
+This is different from Attacks 1 and 2. The attacker already has full access. Their goal now is persistence: creating infrastructure inside the victim's account that survives credential rotation and gives them continued access to the cloud environment.
 
----
-
-## Environment Setup
-
-Two IAM users were created to simulate a real account structure:
-
-```bash
-# Create legitimate employee account
-aws iam create-user --user-name normal-user
-
-# Assign minimal permissions — read-only S3 access
-aws iam attach-user-policy \
-  --user-name normal-user \
-  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-
-# Create compromised attacker account
-aws iam create-user --user-name attacker-user
-
-# Generate credentials for attacker-user
-aws iam create-access-key --user-name attacker-user
-```
-
-The attacker's credentials were configured as a separate CLI profile:
-
-```bash
-aws configure --profile attacker
-```
-
-This ensures all attack commands run with attacker-user's permissions, not root.
+The victim pays for the instance. The attacker controls it.
 
 ---
 
 ## Attack Execution
 
-### Step 1 — Privilege escalation attempt
-
-Acting as attacker-user, attempted to attach AdministratorAccess to their own account:
+### Step 1 — Create SSH key pair
 
 ```bash
-aws iam attach-user-policy \
-  --user-name attacker-user \
-  --policy-arn arn:aws:iam::aws:policy/AdministratorAccess \
-  --profile attacker
+aws ec2 create-key-pair \
+  --key-name soc-lab-key \
+  --region ap-south-1 \
+  --query 'KeyMaterial' \
+  --output text > soc-lab-key.pem
+
+chmod 400 soc-lab-key.pem
 ```
 
-**Result:** `AccessDenied`
+The private key is saved locally. The public key is registered in AWS. Without this key file, no one can SSH into the instance, even knowing the IP address.
 
-The security control worked, attacker-user does not have permission to modify IAM policies. However, the attempt itself is now permanently logged in CloudTrail.
-
-### Step 2 — Access key creation (persistence)
-
-Immediately after the failed escalation, attacker-user created new access keys:
+### Step 2 — Create security group with open SSH
 
 ```bash
-aws iam create-access-key \
-  --user-name attacker-user \
-  --profile attacker
+aws ec2 create-security-group \
+  --group-name soc-lab-sg \
+  --description "SOC Lab Security Group" \
+  --region ap-south-1
 ```
 
-**Result:** Success
+```bash
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-[REDACTED] \
+  --protocol tcp \
+  --port 22 \
+  --cidr 0.0.0.0/0 \
+  --region ap-south-1
+```
 
-The attacker now holds CLI credentials that work from any machine, at any time, independently of the current session.
+`0.0.0.0/0` on port 22 means SSH is open to the entire internet. This is a critical misconfiguration, in a real environment, SSH should be restricted to specific IP ranges or disabled entirely in favour of AWS Systems Manager Session Manager.
+
+### Step 3 — Launch EC2 instance
+
+```bash
+aws ec2 run-instances \
+  --image-id ami-0f58b397bc5c1f2e8 \
+  --instance-type t3.micro \
+  --key-name soc-lab-key \
+  --security-group-ids sg-[REDACTED] \
+  --region ap-south-1 \
+  --count 1 \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=soc-lab-target}]'
+```
+
+Note: The first attempt used `t2.micro` and failed, educational credit accounts are restricted to free-tier eligible instance types. `t3.micro` succeeded. Both `RunInstances` events are visible in CloudTrail.
+
+Instance launched: `i-[REDACTED]` | Public IP: `[REDACTED]` | Region: `ap-south-1`
+
+---
+
+## Post-Exploitation Recon
+
+SSH access established:
+
+```bash
+ssh -i soc-lab-key.pem ubuntu@[REDACTED]
+```
+
+Commands run inside the instance:
+
+### Identity and privilege check
+
+```bash
+whoami
+# ubuntu
+
+id
+# uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu),4(adm),24(cdrom),27(sudo),30(dip),105(lxd)
+```
+
+The `ubuntu` user is in the `sudo` group. This means full root access is one `sudo` command away, the attacker can escalate to root without needing a password.
+
+### Network reconnaissance
+
+```bash
+netstat -tulpn
+```
+
+Port 22 (SSH) confirmed listening. The attacker maps open services for potential lateral movement targets.
+
+### Credential theft attempt
+
+```bash
+cat /root/.aws/credentials
+# cat: /root/.aws/credentials: Permission Denied
+```
+
+The attacker attempted to steal AWS credentials stored on the instance. Blocked, but the attempt is logged in the instance's auth logs.
+
+### Privilege escalation
+
+```bash
+sudo cat /etc/shadow
+```
+
+Successfully read `/etc/shadow`: the file containing hashed passwords for all system users. With these hashes, an attacker could attempt offline password cracking.
+
+### Key hunting
+
+```bash
+find / -name "*.pem" -o -name "*.key" 2>/dev/null
+```
+
+Searching the filesystem for private keys or certificates that could enable lateral movement to other systems.
 
 ---
 
 ## CloudTrail Evidence
 
-### Event 1 — AttachUserPolicy (AccessDenied)
-
-```
-EventName:    AttachUserPolicy
-Username:     attacker-user
-EventTime:    2026-03-22T02:11:41
-EventSource:  iam.amazonaws.com
-ErrorCode:    AccessDenied
-ErrorMessage: User is not authorized to perform: iam:AttachUserPolicy
+```bash
+aws cloudtrail lookup-events \
+  --lookup-attributes AttributeKey=EventName,AttributeValue=RunInstances \
+  --region ap-south-1 \
+  --max-items 3
 ```
 
-### Event 2 — CreateAccessKey (Success)
+### Event 1 — RunInstances (failed attempt, t2.micro)
 
 ```
-EventName:    CreateAccessKey
-Username:     attacker-user
-EventTime:    2026-03-22T02:11:58
-EventSource:  iam.amazonaws.com
-ErrorCode:    (none — succeeded)
+EventName:   RunInstances
+Username:    root
+EventTime:   2026-03-22T03:55:51
+Resources:   AMI, KeyPair, SecurityGroup
 ```
+
+### Event 2 — RunInstances (successful, t3.micro)
+
+```
+EventName:   RunInstances
+Username:    root
+EventTime:   2026-03-22T03:56:36
+Resources:
+  - AWS::EC2::VPC
+  - AWS::EC2::Ami
+  - AWS::EC2::NetworkInterface
+  - AWS::EC2::Instance       ← i-[REDACTED]
+  - AWS::EC2::KeyPair        ← soc-lab-key
+  - AWS::EC2::SecurityGroup  ← soc-lab-sg
+  - AWS::EC2::Subnet
+```
+
+The breadth of resources in a single `RunInstances` event tells a story. A SOC analyst seeing this would immediately ask: who created this key pair, why is a new security group being created, and why does it allow `0.0.0.0/0` on port 22?
 
 ---
 
-## Timeline Analysis
+## Why This Pattern Is Suspicious in CloudTrail
 
-| Time | Event | Result | Significance |
-|------|-------|--------|-------------|
-| 02:11:41 | AttachUserPolicy | AccessDenied | Escalation attempt blocked |
-| 02:11:58 | CreateAccessKey | Success | Persistence established |
+A legitimate admin launching an EC2 instance would typically:
+- Use an existing key pair, not create a new one
+- Use an existing security group with proper restrictions
+- Launch into a known VPC/subnet
 
-**17-second gap** between the two events.
-
-A person navigating the AWS console manually would take several minutes between actions. 17 seconds indicates the attacker was running a script. This pattern: failed escalation immediately followed by credential creation, is a signature of automated post-exploitation tooling such as Pacu or custom scripts.
-
----
-
-## Why CreateAccessKey Is Dangerous
-
-Even though the privilege escalation failed, the attacker succeeded in creating access keys. This means:
-
-- They can authenticate to this AWS account from any machine worldwide
-- The keys survive session termination, password resets, and console lockouts
-- They can continue attempting other attacks at any time
-- If undetected, these keys remain valid indefinitely
-
-This is why `CreateAccessKey` events from non-root users, especially low-privilege users, are one of the highest priority alerts in a cloud SOC environment.
+This sequence: new key pair + new permissive security group + new instance, all created within minutes of each other, is a strong indicator of an attacker establishing infrastructure rather than a legitimate admin performing routine work.
 
 ---
 
@@ -133,14 +182,31 @@ This is why `CreateAccessKey` events from non-root users, especially low-privile
 
 | File | What It Shows |
 |------|--------------|
-| `01-iam-setup.png` | IAM users created, policy attached, attacker access keys generated |
-| `02-attachuserpolicy-denied.png` | CloudTrail event history — AttachUserPolicy from attacker-user |
-| `03-createaccesskey-caught.png` | CloudTrail event history — CreateAccessKey from attacker-user |
-| `04-attachuserpolicy-json.png` | Full CloudTrail JSON — errorCode: AccessDenied visible |
+| `08-ec2-running.png` | EC2 instance in running state with public IP |
+| `09-ssh-whoami-id.png` | Shell access confirmed — ubuntu user in sudo group |
+| `10-ssh-netstat.png` | Network reconnaissance — open ports mapped |
+| `11-ssh-shadow-exfil.png` | /etc/shadow read, *.pem hunt executed |
+| `12-ssh-credentials-denied.png` | AWS credential theft attempt — Permission Denied |
+| `13-runinstances-successful.png` | CloudTrail — successful RunInstances with full resource list |
+| `14-runinstances-failed.png` | CloudTrail — failed RunInstances (t2.micro attempt) |
 
 ---
 
 ## Remediation
+
+### Containment (immediate)
+
+```bash
+aws ec2 terminate-instances \
+  --instance-ids i-[REDACTED] \
+  --region ap-south-1
+```
+
+Verified terminated state via `describe-instances`.
+
+**Important:** Terminating the instance is containment, not full remediation. The attacker still holds the root credentials that were used to launch it. They can launch a new instance immediately.
+
+### Full remediation
 
 ```bash
 # Revoke attacker access keys
@@ -148,20 +214,27 @@ aws iam delete-access-key \
   --user-name attacker-user \
   --access-key-id [REDACTED]
 
-# Verify keys are gone
+# Verify keys gone
 aws iam list-access-keys --user-name attacker-user
+# Returns: "AccessKeyMetadata": []
 
-# Delete the attacker account entirely
-aws iam delete-user --user-name attacker-user
+# Remove open SSH rule
+aws ec2 revoke-security-group-ingress \
+  --group-id sg-[REDACTED] \
+  --protocol tcp \
+  --port 22 \
+  --cidr 0.0.0.0/0 \
+  --region ap-south-1
 ```
 
-Verified by `list-access-keys` returning `"AccessKeyMetadata": []`.
+Confirmed by `RevokedSecurityGroupRules` response showing `CidrIpv4: 0.0.0.0/0` removed.
 
 ---
 
 ## Lessons Learned
 
-- A denied API call is not the end of the story, the attempt is logged and the attacker may try other vectors
-- `CreateAccessKey` should be monitored on all non-admin users, there is rarely a legitimate reason for a low-privilege user to create their own access keys
-- IAM users should follow least privilege strictly, if a user only needs S3 read access, they should have exactly that and nothing more
-- In production, a CloudWatch alarm on `CreateAccessKey` events would have triggered an alert within seconds
+- Terminating an EC2 instance is containment only, the credentials that launched it must be revoked before calling the incident resolved
+- SSH should never be open to `0.0.0.0/0`, use specific IP allowlists or AWS Systems Manager Session Manager
+- `RunInstances` events combined with new key pair and security group creation are a high-confidence indicator of attacker persistence activity
+- In production, a CloudWatch alarm on `RunInstances` from unexpected IAM users or at unusual hours would catch this within minutes
+- Regular audits of running EC2 instances catch unauthorized infrastructure before the monthly bill does
