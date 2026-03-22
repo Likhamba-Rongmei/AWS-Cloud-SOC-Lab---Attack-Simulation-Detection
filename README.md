@@ -179,6 +179,14 @@ Cloud-SOC-Lab/
 
 ---
 
+##  Services Used
+
+- **AWS CloudTrail** — Audit logging and primary detection mechanism  
+- **AWS IAM** — Identity management and privilege escalation attack surface  
+- **AWS S3** — Object storage and misconfiguration target  
+- **AWS EC2** — Compute service used for persistence simulation  
+- **AWS CLI** — Used to perform attack simulation and detection operations  
+
 ## Related
  
 [Wazuh SIEM Lab](https://github.com/Likhamba-Rongmei/Wazuh-SIEM-Implementation) : on-premise SOC lab covering brute force detection and malware simulation. The SSH brute force pattern from that lab and the EC2 attack here represent the same technique across on-prem and cloud environments.
