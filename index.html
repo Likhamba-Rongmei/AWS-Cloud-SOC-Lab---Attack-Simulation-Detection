@@ -197,7 +197,7 @@
   <div class="section-title">Lab Setup <span class="attack-label label-setup">Setup</span></div>
   <div class="grid">
     <div class="card" onclick="openLightbox('iam-setup.png', 'IAM setup — users created, policy attached, attacker access keys generated')">
-      <img src="iam-setup.png" alt="IAM Setup" loading="lazy">
+      <img src="screenshots/iam-setup.png" alt="IAM Setup" loading="lazy">
       <div class="card-body">
         <div class="card-title">IAM setup</div>
         <div class="card-desc">normal-user and attacker-user created, S3ReadOnly policy attached, attacker access keys generated via CLI</div>
@@ -211,21 +211,21 @@
   <div class="section-title">Attack 1 — IAM Privilege Escalation <span class="attack-label label-attack1">T1098</span></div>
   <div class="grid">
     <div class="card" onclick="openLightbox('attachuserpolicy-denied.png', 'AttachUserPolicy — AccessDenied in CloudTrail event history')">
-      <img src="attachuserpolicy-denied.png" alt="AttachUserPolicy Denied" loading="lazy">
+      <img src="screenshots/attachuserpolicy-denied.png" alt="AttachUserPolicy Denied" loading="lazy">
       <div class="card-body">
         <div class="card-title">AttachUserPolicy — AccessDenied</div>
         <div class="card-desc">CloudTrail event history showing attacker-user privilege escalation attempt blocked at 02:11:41</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('createaccesskey-caught.png', 'CreateAccessKey — attacker-user credential persistence at 02:11:58')">
-      <img src="createaccesskey-caught.png" alt="CreateAccessKey Caught" loading="lazy">
+      <img src="screenshots/createaccesskey-caught.png" alt="CreateAccessKey Caught" loading="lazy">
       <div class="card-body">
         <div class="card-title">CreateAccessKey — caught</div>
         <div class="card-desc">17 seconds after failed escalation, attacker-user created new access keys for persistent CLI access</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('attachuserpolicy-json.png', 'Full CloudTrail JSON — errorCode: AccessDenied visible in event record')">
-      <img src="attachuserpolicy-json.png" alt="AttachUserPolicy JSON" loading="lazy">
+      <img src="screenshots/attachuserpolicy-json.png" alt="AttachUserPolicy JSON" loading="lazy">
       <div class="card-body">
         <div class="card-title">CloudTrail JSON — full event record</div>
         <div class="card-desc">Raw JSON showing errorCode: AccessDenied, userIdentity, sourceIPAddress, and userAgent fields</div>
@@ -239,21 +239,21 @@
   <div class="section-title">Attack 2 — S3 Public Exposure <span class="attack-label label-attack2">T1530</span></div>
   <div class="grid">
     <div class="card" onclick="openLightbox('putbucketpolicy-caught.png', 'PutBucketPolicy — bucket exposed to internet with wildcard principal')">
-      <img src="putbucketpolicy-caught.png" alt="PutBucketPolicy" loading="lazy">
+      <img src="screenshots/putbucketpolicy-caught.png" alt="PutBucketPolicy" loading="lazy">
       <div class="card-body">
         <div class="card-title">PutBucketPolicy — bucket exposed</div>
         <div class="card-desc">CloudTrail CLI showing PutBucketPolicy on cloud-soc-test-likhamba at 02:34:12 with Principal: *</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('deletebucketpolicy-caught.png', 'DeleteBucketPolicy — analyst remediation logged at 02:34:25')">
-      <img src="deletebucketpolicy-caught.png" alt="DeleteBucketPolicy" loading="lazy">
+      <img src="screenshots/deletebucketpolicy-caught.png" alt="DeleteBucketPolicy" loading="lazy">
       <div class="card-body">
         <div class="card-title">DeleteBucketPolicy — remediation</div>
         <div class="card-desc">Public policy removed 13 seconds after exposure. CloudTrail logs both attack and remediation.</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('putpublicaccessblock-empty.png', 'PutPublicAccessBlock returning empty — AWS handled silently')">
-      <img src="putpublicaccessblock-empty.png" alt="PutPublicAccessBlock Empty" loading="lazy">
+      <img src="screenshots/putpublicaccessblock-empty.png" alt="PutPublicAccessBlock Empty" loading="lazy">
       <div class="card-body">
         <div class="card-title">PutPublicAccessBlock — empty result</div>
         <div class="card-desc">Query returning no events — AWS handled Block Public Access change silently without a logged API call</div>
@@ -267,49 +267,49 @@
   <div class="section-title">Attack 3 — EC2 Persistence <span class="attack-label label-attack3">T1078</span></div>
   <div class="grid">
     <div class="card" onclick="openLightbox('ec2-running.png', 'EC2 instance running — describe-instances showing public IP')">
-      <img src="ec2-running.png" alt="EC2 Running" loading="lazy">
+      <img src="screenshots/ec2-running.png" alt="EC2 Running" loading="lazy">
       <div class="card-body">
         <div class="card-title">EC2 instance running</div>
         <div class="card-desc">describe-instances confirming instance in running state with public IP assigned</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('ssh-whoami-id.png', 'Shell access confirmed — ubuntu user in sudo group')">
-      <img src="ssh-whoami-id.png" alt="SSH whoami id" loading="lazy">
+      <img src="screenshots/ssh-whoami-id.png" alt="SSH whoami id" loading="lazy">
       <div class="card-body">
         <div class="card-title">SSH access — whoami and id</div>
         <div class="card-desc">Attacker established shell. ubuntu user found in sudo group — full root escalation possible</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('ssh-netstat.png', 'Network recon — open ports mapped inside instance')">
-      <img src="ssh-netstat.png" alt="SSH netstat" loading="lazy">
+      <img src="screenshots/ssh-netstat.png" alt="SSH netstat" loading="lazy">
       <div class="card-body">
         <div class="card-title">Post-exploitation — netstat</div>
         <div class="card-desc">Port 22 confirmed listening. Attacker mapping open services for lateral movement planning.</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('ssh-shadow-exfil.png', 'Privilege escalation and key hunting inside instance')">
-      <img src="ssh-shadow-exfil.png" alt="SSH shadow exfil" loading="lazy">
+      <img src="screenshots/ssh-shadow-exfil.png" alt="SSH shadow exfil" loading="lazy">
       <div class="card-body">
         <div class="card-title">Post-exploitation — /etc/shadow and key hunt</div>
         <div class="card-desc">sudo cat /etc/shadow succeeded. find *.pem executed to hunt for private keys.</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('ssh-credentials-denied.png', 'AWS credential theft attempt blocked')">
-      <img src="ssh-credentials-denied.png" alt="SSH credentials denied" loading="lazy">
+      <img src="screenshots/ssh-credentials-denied.png" alt="SSH credentials denied" loading="lazy">
       <div class="card-body">
         <div class="card-title">Credential theft — Permission Denied</div>
         <div class="card-desc">cat /root/.aws/credentials returned Permission Denied — cloud credential theft blocked</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('runinstances-successful.png', 'RunInstances — successful launch with full resource footprint in CloudTrail')">
-      <img src="runinstances-successful.png" alt="RunInstances Successful" loading="lazy">
+      <img src="screenshots/runinstances-successful.png" alt="RunInstances Successful" loading="lazy">
       <div class="card-body">
         <div class="card-title">CloudTrail — RunInstances (successful)</div>
         <div class="card-desc">Full resource list logged: instance, AMI, key pair, security group, VPC, subnet, network interface</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('runinstances-failed.png', 'RunInstances — failed t2.micro attempt also logged in CloudTrail')">
-      <img src="runinstances-failed.png" alt="RunInstances Failed" loading="lazy">
+      <img src="screenshots/runinstances-failed.png" alt="RunInstances Failed" loading="lazy">
       <div class="card-body">
         <div class="card-title">CloudTrail — RunInstances (failed attempt)</div>
         <div class="card-desc">Failed t2.micro attempt at 03:55:51 visible in CloudTrail — both attempts logged automatically</div>
@@ -323,14 +323,14 @@
   <div class="section-title">Incident Response <span class="attack-label label-response">Remediation</span></div>
   <div class="grid">
     <div class="card" onclick="openLightbox('instance-terminated.png', 'EC2 instance terminated — containment step')">
-      <img src="instance-terminated.png" alt="Instance Terminated" loading="lazy">
+      <img src="screenshots/instance-terminated.png" alt="Instance Terminated" loading="lazy">
       <div class="card-body">
         <div class="card-title">Instance terminated</div>
         <div class="card-desc">describe-instances confirming terminated state. Containment only — credentials still valid at this point.</div>
       </div>
     </div>
     <div class="card" onclick="openLightbox('accesskey-revoked-ssh-removed.png', 'Access keys revoked and SSH rule removed — full remediation')">
-      <img src="accesskey-revoked-ssh-removed.png" alt="AccessKey Revoked SSH Removed" loading="lazy">
+      <img src="screenshots/accesskey-revoked-ssh-removed.png" alt="AccessKey Revoked SSH Removed" loading="lazy">
       <div class="card-body">
         <div class="card-title">Credentials revoked + SSH rule removed</div>
         <div class="card-desc">AccessKeyMetadata: [] confirms keys deleted. 0.0.0.0/0 SSH ingress rule revoked. Full remediation complete.</div>
