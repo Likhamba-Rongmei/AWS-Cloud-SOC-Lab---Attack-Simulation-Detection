@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Cloud SOC Lab — Evidence Gallery</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 40px 24px;
+  }
+
+  header {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 24px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #e6edf3;
+    margin-bottom: 6px;
+  }
+
+  header p {
+    font-size: 14px;
+    color: #8b949e;
+    line-height: 1.6;
+  }
+
+  header a {
+    color: #58a6ff;
+    text-decoration: none;
+  }
+
+  header a:hover { text-decoration: underline; }
+
+  .redaction-note {
+    display: inline-block;
+    margin-top: 10px;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-left: 3px solid #58a6ff;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #8b949e;
+    border-radius: 4px;
+  }
+
+  .section {
+    max-width: 1100px;
+    margin: 0 auto 48px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8b949e;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #21262d;
+  }
+
+  .attack-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 10px;
+    vertical-align: middle;
+    letter-spacing: 0.04em;
+  }
+
+  .label-setup { background: #1f2937; color: #60a5fa; border: 1px solid #1d4ed8; }
+  .label-attack1 { background: #2d1b1b; color: #f87171; border: 1px solid #991b1b; }
+  .label-attack2 { background: #2d2010; color: #fbbf24; border: 1px solid #92400e; }
+  .label-attack3 { background: #1a2d1a; color: #4ade80; border: 1px solid #166534; }
+  .label-response { background: #1e1b2e; color: #a78bfa; border: 1px solid #5b21b6; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+
+  .card:hover { border-color: #58a6ff; }
+
+  .card img {
+    width: 100%;
+    display: block;
+    background: #0d1117;
+  }
+
+  .card-body {
+    padding: 12px 14px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e6edf3;
+    margin-bottom: 4px;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: #8b949e;
+    line-height: 1.5;
+  }
+
+  /* Lightbox */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .lightbox.active { display: flex; }
+
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 88vh;
+    border-radius: 6px;
+    border: 1px solid #21262d;
+  }
+
+  .lightbox-close {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    font-size: 28px;
+    color: #8b949e;
+    cursor: pointer;
+    line-height: 1;
+    background: none;
+    border: none;
+  }
+
+  .lightbox-close:hover { color: #e6edf3; }
+
+  .lightbox-caption {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    color: #8b949e;
+    background: #161b22;
+    border: 1px solid #21262d;
+    padding: 6px 16px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AWS Cloud SOC Lab — Evidence Gallery</h1>
+  <p>
+    Screenshots from live AWS attack simulation and CloudTrail detection.
+    Full documentation at
+    <a href="https://github.com/Likhamba-Rongmei/AWS-Cloud-SOC-Lab---Attack-Simulation-Detection" target="_blank">
+      github.com/Likhamba-Rongmei/AWS-Cloud-SOC-Lab
+    </a>
+  </p>
+  <div class="redaction-note">
+    Account ID, access key IDs, source IPs, instance IDs, and ARNs are redacted in all screenshots.
+  </div>
+</header>
+
+<!-- SETUP -->
+<div class="section">
+  <div class="section-title">Lab Setup <span class="attack-label label-setup">Setup</span></div>
+  <div class="grid">
+    <div class="card" onclick="openLightbox('iam-setup.png', 'IAM setup — users created, policy attached, attacker access keys generated')">
+      <img src="iam-setup.png" alt="IAM Setup" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">IAM setup</div>
+        <div class="card-desc">normal-user and attacker-user created, S3ReadOnly policy attached, attacker access keys generated via CLI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTACK 1 -->
+<div class="section">
+  <div class="section-title">Attack 1 — IAM Privilege Escalation <span class="attack-label label-attack1">T1098</span></div>
+  <div class="grid">
+    <div class="card" onclick="openLightbox('attachuserpolicy-denied.png', 'AttachUserPolicy — AccessDenied in CloudTrail event history')">
+      <img src="attachuserpolicy-denied.png" alt="AttachUserPolicy Denied" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">AttachUserPolicy — AccessDenied</div>
+        <div class="card-desc">CloudTrail event history showing attacker-user privilege escalation attempt blocked at 02:11:41</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('createaccesskey-caught.png', 'CreateAccessKey — attacker-user credential persistence at 02:11:58')">
+      <img src="createaccesskey-caught.png" alt="CreateAccessKey Caught" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">CreateAccessKey — caught</div>
+        <div class="card-desc">17 seconds after failed escalation, attacker-user created new access keys for persistent CLI access</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('attachuserpolicy-json.png', 'Full CloudTrail JSON — errorCode: AccessDenied visible in event record')">
+      <img src="attachuserpolicy-json.png" alt="AttachUserPolicy JSON" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">CloudTrail JSON — full event record</div>
+        <div class="card-desc">Raw JSON showing errorCode: AccessDenied, userIdentity, sourceIPAddress, and userAgent fields</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTACK 2 -->
+<div class="section">
+  <div class="section-title">Attack 2 — S3 Public Exposure <span class="attack-label label-attack2">T1530</span></div>
+  <div class="grid">
+    <div class="card" onclick="openLightbox('putbucketpolicy-caught.png', 'PutBucketPolicy — bucket exposed to internet with wildcard principal')">
+      <img src="putbucketpolicy-caught.png" alt="PutBucketPolicy" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">PutBucketPolicy — bucket exposed</div>
+        <div class="card-desc">CloudTrail CLI showing PutBucketPolicy on cloud-soc-test-likhamba at 02:34:12 with Principal: *</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('deletebucketpolicy-caught.png', 'DeleteBucketPolicy — analyst remediation logged at 02:34:25')">
+      <img src="deletebucketpolicy-caught.png" alt="DeleteBucketPolicy" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">DeleteBucketPolicy — remediation</div>
+        <div class="card-desc">Public policy removed 13 seconds after exposure. CloudTrail logs both attack and remediation.</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('putpublicaccessblock-empty.png', 'PutPublicAccessBlock returning empty — AWS handled silently')">
+      <img src="putpublicaccessblock-empty.png" alt="PutPublicAccessBlock Empty" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">PutPublicAccessBlock — empty result</div>
+        <div class="card-desc">Query returning no events — AWS handled Block Public Access change silently without a logged API call</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTACK 3 -->
+<div class="section">
+  <div class="section-title">Attack 3 — EC2 Persistence <span class="attack-label label-attack3">T1078</span></div>
+  <div class="grid">
+    <div class="card" onclick="openLightbox('ec2-running.png', 'EC2 instance running — describe-instances showing public IP')">
+      <img src="ec2-running.png" alt="EC2 Running" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">EC2 instance running</div>
+        <div class="card-desc">describe-instances confirming instance in running state with public IP assigned</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('ssh-whoami-id.png', 'Shell access confirmed — ubuntu user in sudo group')">
+      <img src="ssh-whoami-id.png" alt="SSH whoami id" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">SSH access — whoami and id</div>
+        <div class="card-desc">Attacker established shell. ubuntu user found in sudo group — full root escalation possible</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('ssh-netstat.png', 'Network recon — open ports mapped inside instance')">
+      <img src="ssh-netstat.png" alt="SSH netstat" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">Post-exploitation — netstat</div>
+        <div class="card-desc">Port 22 confirmed listening. Attacker mapping open services for lateral movement planning.</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('ssh-shadow-exfil.png', 'Privilege escalation and key hunting inside instance')">
+      <img src="ssh-shadow-exfil.png" alt="SSH shadow exfil" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">Post-exploitation — /etc/shadow and key hunt</div>
+        <div class="card-desc">sudo cat /etc/shadow succeeded. find *.pem executed to hunt for private keys.</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('ssh-credentials-denied.png', 'AWS credential theft attempt blocked')">
+      <img src="ssh-credentials-denied.png" alt="SSH credentials denied" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">Credential theft — Permission Denied</div>
+        <div class="card-desc">cat /root/.aws/credentials returned Permission Denied — cloud credential theft blocked</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('runinstances-successful.png', 'RunInstances — successful launch with full resource footprint in CloudTrail')">
+      <img src="runinstances-successful.png" alt="RunInstances Successful" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">CloudTrail — RunInstances (successful)</div>
+        <div class="card-desc">Full resource list logged: instance, AMI, key pair, security group, VPC, subnet, network interface</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('runinstances-failed.png', 'RunInstances — failed t2.micro attempt also logged in CloudTrail')">
+      <img src="runinstances-failed.png" alt="RunInstances Failed" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">CloudTrail — RunInstances (failed attempt)</div>
+        <div class="card-desc">Failed t2.micro attempt at 03:55:51 visible in CloudTrail — both attempts logged automatically</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INCIDENT RESPONSE -->
+<div class="section">
+  <div class="section-title">Incident Response <span class="attack-label label-response">Remediation</span></div>
+  <div class="grid">
+    <div class="card" onclick="openLightbox('instance-terminated.png', 'EC2 instance terminated — containment step')">
+      <img src="instance-terminated.png" alt="Instance Terminated" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">Instance terminated</div>
+        <div class="card-desc">describe-instances confirming terminated state. Containment only — credentials still valid at this point.</div>
+      </div>
+    </div>
+    <div class="card" onclick="openLightbox('accesskey-revoked-ssh-removed.png', 'Access keys revoked and SSH rule removed — full remediation')">
+      <img src="accesskey-revoked-ssh-removed.png" alt="AccessKey Revoked SSH Removed" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">Credentials revoked + SSH rule removed</div>
+        <div class="card-desc">AccessKeyMetadata: [] confirms keys deleted. 0.0.0.0/0 SSH ingress rule revoked. Full remediation complete.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&#x2715;</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<script>
+function openLightbox(src, caption) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox-caption').textContent = caption;
+  document.getElementById('lightbox').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
+</script>
+</body>
+</html>
