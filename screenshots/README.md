@@ -5,7 +5,7 @@ All screenshots are taken from the live AWS environment (Console and CLI) during
 **Redaction:** Account ID, access key IDs, source IPs, instance IDs, and ARNs are blurred in all screenshots. Standard practice when sharing investigation artifacts publicly.
 
 View all screenshots in the gallery:  
-👉 [Evidence Gallery](https://likhamba-rongmei.github.io/AWS-Cloud-SOC-Lab---Attack-Simulation-Detection/)
+👉 [Evidence Gallery](https://likhamba-rongmei.github.io/AWS-Cloud-SOC-Lab-Attack-Simulation-Detection/)
 
 ## Lab Setup
 
